@@ -6,10 +6,10 @@ namespace GameService.Services
 {
     public abstract class Service<TEntity> : IService<TEntity> where TEntity : class
     {
-        private readonly DbContext dbContext;
+        private readonly GameContext dbContext;
         private readonly ILogger logger;
         private readonly string? className;
-        public Service(DbContext dbContext, ILogger logger)
+        public Service(GameContext dbContext, ILogger logger)
         {
             this.dbContext = dbContext ?? throw new System.ArgumentNullException(nameof(dbContext));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -18,7 +18,7 @@ namespace GameService.Services
 
        
 
-        public virtual async Task<TEntity> AddAsync(TEntity entity, CancellationToken cancellationToken = default)
+        public virtual async Task<TEntity> AddAsync(TEntity entity, CancellationToken cancellationToken = default(CancellationToken))
         {
             try
             {

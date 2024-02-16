@@ -39,16 +39,5 @@ namespace GameDataLibrary
         [Required]
         [DataType(DataType.DateTime)]
         public DateTime UpdateDate { get; set; } = DateTime.UtcNow;
-
-        /// <summary>
-        /// Gets or sets the concurrency stamp.
-        /// </summary>
-        /// <value>
-        /// The concurrency stamp.
-        /// </value>
-        [Timestamp]
-        [Required]
-        public byte[] ConcurrencyStamp { get; set; } = null!;
-
     }
 }
