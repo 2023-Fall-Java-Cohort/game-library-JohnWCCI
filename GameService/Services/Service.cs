@@ -141,12 +141,18 @@ namespace GameService.Services
         {
             try
             {
+                
+               // orderBy = orderBy.ToUpper().Substring(0,1) + orderBy.ToLower().Substring(1);
                 IQueryable<TEntity> entities = dbContext.Set<TEntity>()
                     .AsNoTracking()
                     .OrderBy(o => EF.Property<object>(o, orderBy))
-                    .Skip(pageIndex * pageSize)
+                    .Skip((pageIndex-1) * pageSize)
                     .Take(pageSize);
                 return await entities.ToListAsync(cancellationToken);
+            }
+            catch (InvalidOperationException ie)
+            {
+                throw new Exception($"OrderBy parameter {orderBy} is not valid",ie);
             }
             catch (Exception ex)
             {
@@ -203,7 +209,7 @@ namespace GameService.Services
                    .AsNoTracking()
                    .Where(predicate)
                    .OrderBy(o => EF.Property<object>(o, OrderByColumn))
-                   .Skip(pageIndex * pageSize)
+                   .Skip((pageIndex-1) * pageSize)
                    .Take(pageSize);
                 return await entities.ToListAsync(cancellationToken);
             }

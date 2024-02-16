@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using GameDataLibrary;
-using GameService;
 using GameService.Services;
+using System.Linq.Expressions;
 
 namespace GameService.Controllers
 {
+    /// <summary>
+    /// Takes care of Publishers
+    /// </summary>
+    /// <seealso cref="Microsoft.AspNetCore.Mvc.ControllerBase" />
     [Route("api/v1/[controller]")]
     [ApiController]
     public class PublishersController : ControllerBase
@@ -51,7 +49,7 @@ namespace GameService.Controllers
             PublisherModel? publisherModel;
             try
             {
-                 publisherModel = await this.publisher.GetAsync(id);
+                 publisherModel = await this.publisher.GetAsync(id, cancellationToken);
                 if (publisherModel == null)
                 {
                     return NotFound();
@@ -63,68 +61,100 @@ namespace GameService.Controllers
             }
             return publisherModel;
         }
+                
 
-        // PUT: api/Publishers/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Puts the publisher model.
+        /// To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <param name="publisherModel">The publisher model.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <example>PUT: api/Publishers/5</example>
+        /// <returns></returns>
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutPublisherModel(int id, PublisherModel publisherModel)
+        public async Task<ActionResult<PublisherModel>> PutPublisherModel(int id, PublisherModel publisherModel, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (id != publisherModel.Id)
             {
-                return BadRequest();
+                return BadRequest("Invalid ID");
             }
-
-            _context.Entry(publisherModel).State = EntityState.Modified;
-
             try
             {
-                await _context.SaveChangesAsync();
+               return await publisher.UpdateAsync(publisherModel,cancellationToken);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
-                if (!PublisherModelExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+               return BadRequest( new Exception($"Unable to update Publisher record: {publisherModel}", ex));
             }
-
-            return NoContent();
         }
 
-        // POST: api/Publishers
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<PublisherModel>> PostPublisherModel(PublisherModel publisherModel)
+      
+        /// <summary>
+        /// Posts the publisher model.
+        /// To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754 
+        /// </summary>
+        /// <param name="publisherModel">The publisher model.</param>
+        /// <param name="">The .</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <example>POST: api/Publishers</example>
+        /// <returns></returns>
+      [HttpPost]
+        public async Task<ActionResult<PublisherModel>> PostPublisherModel(PublisherModel publisherModel, CancellationToken cancellationToken = default(CancellationToken))
         {
-            _context.Publishers.Add(publisherModel);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetPublisherModel", new { id = publisherModel.Id }, publisherModel);
+            try
+            {
+                return await publisher.AddAsync(publisherModel, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new Exception($"Unable to add Publisher record: {publisherModel}", ex));
+            }
         }
 
         // DELETE: api/Publishers/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePublisherModel(int id)
+        public async Task<IActionResult> DeletePublisherModel(int id, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var publisherModel = await _context.Publishers.FindAsync(id);
-            if (publisherModel == null)
+            PublisherModel? publisherModel = await publisher.GetAsync(id, cancellationToken);
+            if (publisherModel is null)
             {
                 return NotFound();
             }
+            try
+            {
+                await publisher.DeleteAsync(publisherModel, cancellationToken);
+            }
+            catch (Exception ex)
+            {
 
-            _context.Publishers.Remove(publisherModel);
-            await _context.SaveChangesAsync();
-
+                return BadRequest(new Exception($"Unable to Delete Publisher record: {id}", ex));
+            }
+          
             return NoContent();
         }
+        [HttpGet("{pageIndex}, {pageSize}, {orderBy}")]   
+        public async Task<ActionResult<IEnumerable<PublisherModel>>> GetAllPageAsync(int pageIndex, int pageSize = 10, string orderBy = "Id", CancellationToken cancellationToken = default(CancellationToken))
+       {
+            try
+            {
+                List<PublisherModel> p =  await publisher.GetAllPageAsync(pageIndex, pageSize, orderBy, cancellationToken);
+                if(p.Count == 0)
+                {
+                    return NotFound();
+                }
+                return p;
+            }
+            catch (Exception ex)
+            {
 
-        private bool PublisherModelExists(int id)
-        {
-            return _context.Publishers.Any(e => e.Id == id);
+                return BadRequest($"{ex.Message}\n Unable to get any publisher using pageIndex {pageIndex}, pageSize {pageSize} orderby {orderBy}");
+            }
         }
     }
 }
+
+//Task<List<TEntity>> GetAllPageAsync(int pageIndex, int pageSize = 10, string orderBy = "Id", CancellationToken cancellationToken = default(CancellationToken));
+//Task<List<TEntity>> FindAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default(CancellationToken));
+//Task<int> AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default(CancellationToken));
+//Task<List<TEntity>> GetSearchEntityAsync(Expression<Func<TEntity, bool>> predicate, int PageIndex = 1, int PageSize = 20, string
