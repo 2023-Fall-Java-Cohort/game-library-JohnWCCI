@@ -8,8 +8,8 @@ namespace GameService
         public static IServiceCollection AddDbService(this IServiceCollection services)
         {
             services.AddDbContext<GameContext>();
-            services.AddTransient<IBoardGameService, BoardGameService>();
-            services.AddTransient<IPublisherService, PublisherService>();
+            services.AddScoped<IBoardGameService, BoardGameService>();
+            services.AddScoped<IPublisherService, PublisherService>();
             return services;
         }
     }

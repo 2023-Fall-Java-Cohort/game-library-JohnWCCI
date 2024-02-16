@@ -14,11 +14,13 @@ namespace GameService.Services
         private readonly GameContext dbContext;
         private readonly ILogger logger;
         private readonly string? className;
+        private object? lockvalue;
         public Service(GameContext dbContext, ILogger logger)
         {
             this.dbContext = dbContext ?? throw new System.ArgumentNullException(nameof(dbContext));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.className = typeof(TEntity).FullName;
+            lockvalue = new object();
         }
 
 
@@ -32,9 +34,11 @@ namespace GameService.Services
         {
             try
             {
+
                 await dbContext.Set<TEntity>().AddAsync(entity, cancellationToken);
                 await dbContext.SaveChangesAsync(cancellationToken);
                 dbContext.Entry(entity).State = EntityState.Detached;
+
             }
             catch (Exception ex)
             {
@@ -56,7 +60,7 @@ namespace GameService.Services
             try
             {
                 await dbContext.Set<TEntity>().AddRangeAsync(entities, cancellationToken);
-                result = await dbContext.SaveChangesAsync( cancellationToken);
+                result = await dbContext.SaveChangesAsync(cancellationToken);
             }
             catch (Exception ex)
             {
@@ -78,7 +82,7 @@ namespace GameService.Services
             try
             {
                 _ = dbContext.Set<TEntity>().Remove(entity);
-               result = ( await dbContext.SaveChangesAsync(cancellationToken) == 1);
+                result = (await dbContext.SaveChangesAsync(cancellationToken) == 1);
             }
             catch (Exception ex)
             {
@@ -106,7 +110,7 @@ namespace GameService.Services
                 logger.LogError(ex, $"Failed to Find {className} Entity in database. {predicate}");
                 throw;
             }
-            
+
         }
 
         /// <summary>
@@ -141,18 +145,18 @@ namespace GameService.Services
         {
             try
             {
-                
-               // orderBy = orderBy.ToUpper().Substring(0,1) + orderBy.ToLower().Substring(1);
+
+                // orderBy = orderBy.ToUpper().Substring(0,1) + orderBy.ToLower().Substring(1);
                 IQueryable<TEntity> entities = dbContext.Set<TEntity>()
                     .AsNoTracking()
                     .OrderBy(o => EF.Property<object>(o, orderBy))
-                    .Skip((pageIndex-1) * pageSize)
+                    .Skip((pageIndex - 1) * pageSize)
                     .Take(pageSize);
                 return await entities.ToListAsync(cancellationToken);
             }
             catch (InvalidOperationException ie)
             {
-                throw new Exception($"OrderBy parameter {orderBy} is not valid",ie);
+                throw new Exception($"OrderBy parameter {orderBy} is not valid", ie);
             }
             catch (Exception ex)
             {
@@ -177,8 +181,8 @@ namespace GameService.Services
                     .AsNoTracking()
                     .Where(w => EF.Property<int>(w, "id") == id);
 
-               result = await entities.FirstOrDefaultAsync(cancellationToken);
-                if(result is null)
+                result = await entities.FirstOrDefaultAsync(cancellationToken);
+                if (result is null)
                 {
                     throw new Exception($"{className} {id} was not found in the table");
                 }
@@ -209,7 +213,7 @@ namespace GameService.Services
                    .AsNoTracking()
                    .Where(predicate)
                    .OrderBy(o => EF.Property<object>(o, OrderByColumn))
-                   .Skip((pageIndex-1) * pageSize)
+                   .Skip((pageIndex - 1) * pageSize)
                    .Take(pageSize);
                 return await entities.ToListAsync(cancellationToken);
             }
