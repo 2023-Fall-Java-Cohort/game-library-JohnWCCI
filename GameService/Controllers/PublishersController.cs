@@ -24,7 +24,12 @@ namespace GameService.Controllers
             this.logger = logger;
         }
 
-        // GET: api/Publishers
+        /// <summary>
+        /// Gets the publishers.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <example>GET: api/Publishers</example>
+        /// <returns></returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<PublisherModel>>> GetPublishers(CancellationToken cancellationToken = default(CancellationToken))
         {
